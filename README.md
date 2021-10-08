@@ -96,6 +96,6 @@ cd /home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build
 
 Make a new User in AWS IAM console, attach `AmazonKinesisVideoStreamsFullAccess` to it and get the Access key ID and secret key.
 
-Go to `client/app.js` in this repo and replace the first 2 lines with your credentials.
+Go to `client/app.js` in this repo and replace the first 3 lines with your credentials/channel name.
 
 Then open up `client/index.html` in your browser and you will be able to view the video stream + send commands to control the rover.
