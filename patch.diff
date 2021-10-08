@@ -1,0 +1,145 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 37c6eb9ee..9a95a5fde 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -358,13 +358,13 @@ if (BUILD_SAMPLE)
+     kvsWebrtcClientMaster
+     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/Common.c
+     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/kvsWebRTCClientMaster.c)
+-  target_link_libraries(kvsWebrtcClientMaster kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils)
++  target_link_libraries(kvsWebrtcClientMaster kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils wiringPi)
+ 
+   add_executable(
+     kvsWebrtcClientViewer
+     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/Common.c
+     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/kvsWebRTCClientViewer.c)
+-  target_link_libraries(kvsWebrtcClientViewer kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils)
++  target_link_libraries(kvsWebrtcClientViewer kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils wiringPi)
+ 
+   add_executable(
+           discoverNatBehavior
+@@ -377,7 +377,7 @@ if (BUILD_SAMPLE)
+       ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/Common.c
+       ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/kvsWebRTCClientMasterGstreamerSample.c
+     )
+-    target_link_libraries(kvsWebrtcClientMasterGstSample kvsWebrtcClient kvsWebrtcSignalingClient ${GST_SAMPLE_LIBRARIES} kvspicUtils)
++    target_link_libraries(kvsWebrtcClientMasterGstSample kvsWebrtcClient kvsWebrtcSignalingClient ${GST_SAMPLE_LIBRARIES} kvspicUtils wiringPi)
+ 
+     install(TARGETS kvsWebrtcClientMasterGstSample
+       RUNTIME DESTINATION bin
+diff --git a/samples/Common.c b/samples/Common.c
+index 100415d02..4f8ea4777 100644
+--- a/samples/Common.c
++++ b/samples/Common.c
+@@ -1,6 +1,9 @@
+-#define LOG_CLASS "WebRtcSamples"
++#include <wiringPi.h>
+ #include "Samples.h"
+ 
++#define SERVO_PIN 18
++#define LOG_CLASS "WebRtcSamples"
++
+ PSampleConfiguration gSampleConfiguration = NULL;
+ 
+ VOID sigintHandler(INT32 sigNum)
+@@ -20,6 +23,19 @@ VOID onDataChannelMessage(UINT64 customData, PRtcDataChannel pDataChannel, BOOL
+         DLOGI("DataChannel Binary Message");
+     } else {
+         DLOGI("DataChannel String Message: %.*s\n", pMessageLen, pMessage);
++        // Control servo by data channel message
++        if (pMessageLen == 1) {
++            if (pMessage[0] == 'L') {
++                DLOGI("Turn left");
++                pwmWrite(SERVO_PIN, 95);
++            } else if (pMessage[0] == 'R') {
++                DLOGI("Turn right");
++                pwmWrite(SERVO_PIN, 45);
++            } else if (pMessage[0] == 'C') {
++                DLOGI("Turn center");
++                pwmWrite(SERVO_PIN, 70);
++            }
++        }
+     }
+ }
+ 
+@@ -621,7 +637,7 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE
+                                  PSampleConfiguration* ppSampleConfiguration)
+ {
+     STATUS retStatus = STATUS_SUCCESS;
+-    PCHAR pAccessKey, pSecretKey, pSessionToken, pLogLevel;
++    PCHAR pIoTCredentialsEndpoint, pLogLevel;
+     PSampleConfiguration pSampleConfiguration = NULL;
+     UINT32 logLevel = LOG_LEVEL_DEBUG;
+ 
+@@ -629,9 +645,8 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE
+ 
+     CHK(NULL != (pSampleConfiguration = (PSampleConfiguration) MEMCALLOC(1, SIZEOF(SampleConfiguration))), STATUS_NOT_ENOUGH_MEMORY);
+ 
+-    CHK_ERR((pAccessKey = getenv(ACCESS_KEY_ENV_VAR)) != NULL, STATUS_INVALID_OPERATION, "AWS_ACCESS_KEY_ID must be set");
+-    CHK_ERR((pSecretKey = getenv(SECRET_KEY_ENV_VAR)) != NULL, STATUS_INVALID_OPERATION, "AWS_SECRET_ACCESS_KEY must be set");
+-    pSessionToken = getenv(SESSION_TOKEN_ENV_VAR);
++    // Pass IoT Credential Provider endpoint via an environmental variable
++    CHK_ERR((pIoTCredentialsEndpoint = getenv("AWS_IOT_CREDENTIALS_ENDPOINT")) != NULL, STATUS_INVALID_OPERATION, "AWS_IOT_CREDENTIALS_ENDPOINT must be set");
+     pSampleConfiguration->enableFileLogging = FALSE;
+     if (NULL != getenv(ENABLE_FILE_LOGGING)) {
+         pSampleConfiguration->enableFileLogging = TRUE;
+@@ -650,8 +665,15 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE
+ 
+     SET_LOGGER_LOG_LEVEL(logLevel);
+ 
+-    CHK_STATUS(
+-        createStaticCredentialProvider(pAccessKey, 0, pSecretKey, 0, pSessionToken, 0, MAX_UINT64, &pSampleConfiguration->pCredentialProvider));
++    // Use IoT Credential Provider instead of static credentials
++    CHK_STATUS(createLwsIotCredentialProvider(
++        pIoTCredentialsEndpoint,  // IoT credentials endpoint
++        "/home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build/certificate.pem.crt",  // path to iot certificate
++        "/home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build/private.pem.key", // path to iot private key
++        "/home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build/AmazonRootCA1.pem", // path to CA cert
++        "RasPiKVSWebRTCRoleAlias", // IoT role alias
++        channelName, // iot thing name, recommended to be same as your channel name
++        &pSampleConfiguration->pCredentialProvider));
+ 
+     pSampleConfiguration->mediaSenderTid = INVALID_TID_VALUE;
+     pSampleConfiguration->signalingClientHandle = INVALID_SIGNALING_CLIENT_HANDLE_VALUE;
+@@ -910,7 +932,8 @@ STATUS freeSampleConfiguration(PSampleConfiguration* ppSampleConfiguration)
+         CVAR_FREE(pSampleConfiguration->cvar);
+     }
+ 
+-    freeStaticCredentialProvider(&pSampleConfiguration->pCredentialProvider);
++    // Use IoT Credential Provider instead of static credentials
++    freeIotCredentialProvider(&pSampleConfiguration->pCredentialProvider);
+ 
+     if (pSampleConfiguration->iceCandidatePairStatsTimerId != MAX_UINT32) {
+         retStatus = timerQueueCancelTimer(pSampleConfiguration->timerQueueHandle, pSampleConfiguration->iceCandidatePairStatsTimerId,
+diff --git a/samples/kvsWebRTCClientMasterGstreamerSample.c b/samples/kvsWebRTCClientMasterGstreamerSample.c
+index 7b70f0dcb..3bb92045d 100644
+--- a/samples/kvsWebRTCClientMasterGstreamerSample.c
++++ b/samples/kvsWebRTCClientMasterGstreamerSample.c
+@@ -1,6 +1,9 @@
+ #include "Samples.h"
+ #include <gst/gst.h>
+ #include <gst/app/gstappsink.h>
++#include <wiringPi.h>
++
++#define SERVO_PIN 18
+ 
+ extern PSampleConfiguration gSampleConfiguration;
+ 
+@@ -340,6 +343,17 @@ INT32 main(INT32 argc, CHAR* argv[])
+ 
+     signal(SIGINT, sigintHandler);
+ 
++    // Setup GPIO for servo
++    if (wiringPiSetupGpio() == -1) {
++        printf("[KVS GStreamer Master] GPIO Setup failed\n");
++        goto CleanUp;
++    }
++
++    pinMode(SERVO_PIN, PWM_OUTPUT);
++    pwmSetMode(PWM_MODE_MS);
++    pwmSetClock(400);
++    pwmSetRange(1024);
++
+     // do trickle-ice by default
+     printf("[KVS GStreamer Master] Using trickleICE by default\n");
+ 

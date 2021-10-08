@@ -1,6 +1,15 @@
 #include "Samples.h"
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
+#include <wiringPi.h>
+
+#define EN_A 13
+#define EN_B 12
+#define IN1 22
+#define IN2 27
+#define IN3 24
+#define IN4 23
+#define LED 17
 
 extern PSampleConfiguration gSampleConfiguration;
 
@@ -340,6 +349,27 @@ INT32 main(INT32 argc, CHAR* argv[])
 
     signal(SIGINT, sigintHandler);
 
+    // Setup GPIO for servo
+    if (wiringPiSetupGpio() == -1) {
+        printf("[KVS GStreamer Master] GPIO Setup failed\n");
+        goto CleanUp;
+    }
+
+    pinMode(EN_A, PWM_OUTPUT);
+    pinMode(EN_B, PWM_OUTPUT);
+    pinMode (IN1, OUTPUT) ;
+    pinMode (IN2, OUTPUT) ;
+    pinMode (IN3, OUTPUT) ;
+    pinMode (IN4, OUTPUT) ;
+    pinMode (LED, OUTPUT) ;
+
+    pwmSetMode(PWM_MODE_MS);
+    pwmSetClock(400);
+    pwmSetRange(1024);
+
+    // turn on LED
+    digitalWrite (LED, HIGH);
+
     // do trickle-ice by default
     printf("[KVS GStreamer Master] Using trickleICE by default\n");
 
@@ -449,6 +479,9 @@ CleanUp:
     }
 
     printf("[KVS GStreamer Master] Cleaning up....\n");
+
+    // turn off LED
+    digitalWrite (LED, LOW);
 
     if (pSampleConfiguration != NULL) {
         // Kick of the termination sequence

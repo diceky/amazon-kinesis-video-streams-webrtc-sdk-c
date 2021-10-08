@@ -1,7 +1,17 @@
-#define LOG_CLASS "WebRtcSamples"
+#include <wiringPi.h>
 #include "Samples.h"
 
+#define EN_A 13
+#define EN_B 12
+#define IN1 22
+#define IN2 27
+#define IN3 24
+#define IN4 23
+#define LED 17
+#define LOG_CLASS "WebRtcSamples"
+
 PSampleConfiguration gSampleConfiguration = NULL;
+int pwmSpeed = 400;
 
 VOID sigintHandler(INT32 sigNum)
 {
@@ -17,9 +27,86 @@ VOID onDataChannelMessage(UINT64 customData, PRtcDataChannel pDataChannel, BOOL 
     UNUSED_PARAM(customData);
     UNUSED_PARAM(pDataChannel);
     if (isBinary) {
-        DLOGI("DataChannel Binary Message");
+        DLOGI("DataChannel Binary Message");\
     } else {
         DLOGI("DataChannel String Message: %.*s\n", pMessageLen, pMessage);
+        // Control motors by data channel message
+        if (pMessageLen == 1) {
+            if (pMessage[0] == 'F') {
+                DLOGI("Forward");
+                // for some reason forward doesn't work on its own so add back...
+                // digitalWrite (IN1, HIGH);
+                // digitalWrite (IN2, LOW);
+                // digitalWrite (IN3, HIGH);
+                // digitalWrite (IN4, LOW);
+                // delay (10);
+                // then do forward...
+                pwmWrite(EN_A, pwmSpeed);
+                pwmWrite(EN_A, pwmSpeed);
+                delay (10);
+                digitalWrite (IN1, LOW);
+                digitalWrite (IN2, HIGH);
+                digitalWrite (IN3, LOW);
+                digitalWrite (IN4, HIGH);
+                delay (100);
+                pwmWrite(EN_A, pwmSpeed);
+                pwmWrite(EN_B, pwmSpeed);
+            } else if (pMessage[0] == 'B') {
+                DLOGI("Back");
+                digitalWrite (IN1, HIGH);
+                digitalWrite (IN2, LOW);
+                digitalWrite (IN3, HIGH);
+                digitalWrite (IN4, LOW);
+                delay (100);
+                pwmWrite(EN_A, pwmSpeed);
+                pwmWrite(EN_B, pwmSpeed);
+            } else if (pMessage[0] == 'L') {
+                DLOGI("Left");
+                digitalWrite (IN1, HIGH);
+                digitalWrite (IN2, LOW);
+                digitalWrite (IN3, LOW);
+                digitalWrite (IN4, HIGH);
+                delay (100);
+                pwmWrite(EN_A, 700);
+                pwmWrite(EN_B, 700);
+            } else if (pMessage[0] == 'R') {
+                DLOGI("Right");
+                digitalWrite (IN1, LOW);
+                digitalWrite (IN2, HIGH);
+                digitalWrite (IN3, HIGH);
+                digitalWrite (IN4, LOW);
+                delay (100);
+                pwmWrite(EN_A, 700);
+                pwmWrite(EN_B, 700);
+            } else if (pMessage[0] == 'S') {
+                DLOGI("Stop");
+                digitalWrite (IN1, LOW);
+                digitalWrite (IN2, LOW);
+                digitalWrite (IN3, LOW);
+                digitalWrite (IN4, LOW);
+                delay (100);
+                pwmWrite(EN_A, 0);
+                pwmWrite(EN_B, 0);
+            }else if (pMessage[0] == '1') {
+                pwmSpeed = 100;
+            }else if (pMessage[0] == '2') {
+                pwmSpeed = 200;
+            }else if (pMessage[0] == '3') {
+                pwmSpeed = 300;
+            }else if (pMessage[0] == '4') {
+                pwmSpeed = 400;
+            }else if (pMessage[0] == '5') {
+                pwmSpeed = 500;
+            }else if (pMessage[0] == '6') {
+                pwmSpeed = 600;
+            }else if (pMessage[0] == '7') {
+                pwmSpeed = 700;
+            }else if (pMessage[0] == '8') {
+                pwmSpeed = 800;
+            }else if (pMessage[0] == '9') {
+                pwmSpeed = 900;
+            }
+        }
     }
 }
 
@@ -621,7 +708,7 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE 
                                  PSampleConfiguration* ppSampleConfiguration)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    PCHAR pAccessKey, pSecretKey, pSessionToken, pLogLevel;
+    PCHAR pIoTCredentialsEndpoint, pLogLevel;
     PSampleConfiguration pSampleConfiguration = NULL;
     UINT32 logLevel = LOG_LEVEL_DEBUG;
 
@@ -629,9 +716,8 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE 
 
     CHK(NULL != (pSampleConfiguration = (PSampleConfiguration) MEMCALLOC(1, SIZEOF(SampleConfiguration))), STATUS_NOT_ENOUGH_MEMORY);
 
-    CHK_ERR((pAccessKey = getenv(ACCESS_KEY_ENV_VAR)) != NULL, STATUS_INVALID_OPERATION, "AWS_ACCESS_KEY_ID must be set");
-    CHK_ERR((pSecretKey = getenv(SECRET_KEY_ENV_VAR)) != NULL, STATUS_INVALID_OPERATION, "AWS_SECRET_ACCESS_KEY must be set");
-    pSessionToken = getenv(SESSION_TOKEN_ENV_VAR);
+    // Pass IoT Credential Provider endpoint via an environmental variable
+    CHK_ERR((pIoTCredentialsEndpoint = getenv("AWS_IOT_CREDENTIALS_ENDPOINT")) != NULL, STATUS_INVALID_OPERATION, "AWS_IOT_CREDENTIALS_ENDPOINT must be set");
     pSampleConfiguration->enableFileLogging = FALSE;
     if (NULL != getenv(ENABLE_FILE_LOGGING)) {
         pSampleConfiguration->enableFileLogging = TRUE;
@@ -650,8 +736,15 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE 
 
     SET_LOGGER_LOG_LEVEL(logLevel);
 
-    CHK_STATUS(
-        createStaticCredentialProvider(pAccessKey, 0, pSecretKey, 0, pSessionToken, 0, MAX_UINT64, &pSampleConfiguration->pCredentialProvider));
+    // Use IoT Credential Provider instead of static credentials
+    CHK_STATUS(createLwsIotCredentialProvider(
+        pIoTCredentialsEndpoint,  // IoT credentials endpoint
+        "/home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build/certificate.pem.crt",  // path to iot certificate
+        "/home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build/private.pem.key", // path to iot private key
+        "/home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build/AmazonRootCA1.pem", // path to CA cert
+        "RasPiKVSWebRTCRoleAlias", // IoT role alias
+        channelName, // iot thing name, recommended to be same as your channel name
+        &pSampleConfiguration->pCredentialProvider));
 
     pSampleConfiguration->mediaSenderTid = INVALID_TID_VALUE;
     pSampleConfiguration->signalingClientHandle = INVALID_SIGNALING_CLIENT_HANDLE_VALUE;
@@ -807,7 +900,7 @@ STATUS getIceCandidatePairStatsCallback(UINT32 timerId, UINT64 currentTime, UINT
                     (DOUBLE) currentMeasureDuration;
                 DLOGD("Packet discard rate: %lf pkts/sec", averagePacketsDiscardedOnSend);
 
-                DLOGD("Current STUN request round trip time: %lf sec",
+                  DLOGD("Current STUN request round trip time: %lf sec",
                       pSampleConfiguration->rtcIceCandidatePairMetrics.rtcStatsObject.iceCandidatePairStats.currentRoundTripTime);
                 DLOGD("Number of STUN responses received: %llu",
                       pSampleConfiguration->rtcIceCandidatePairMetrics.rtcStatsObject.iceCandidatePairStats.responsesReceived);
@@ -910,7 +1003,8 @@ STATUS freeSampleConfiguration(PSampleConfiguration* ppSampleConfiguration)
         CVAR_FREE(pSampleConfiguration->cvar);
     }
 
-    freeStaticCredentialProvider(&pSampleConfiguration->pCredentialProvider);
+    // Use IoT Credential Provider instead of static credentials
+    freeIotCredentialProvider(&pSampleConfiguration->pCredentialProvider);
 
     if (pSampleConfiguration->iceCandidatePairStatsTimerId != MAX_UINT32) {
         retStatus = timerQueueCancelTimer(pSampleConfiguration->timerQueueHandle, pSampleConfiguration->iceCandidatePairStatsTimerId,

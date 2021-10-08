@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Rover Kinesis</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="loader.css" />
+    <link rel="stylesheet" href="./app.css" />
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.585.0.min.js"></script>
+    <script src="https://unpkg.com/@ungap/url-search-params"></script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script src="https://unpkg.com/amazon-kinesis-video-streams-webrtc/dist/kvs-webrtc.min.js"></script>
+    <link rel="icon" type="image/png" href="favicon.ico" />
+  </head>
+  <body>
+    <div class="container mt-3">
+      <h1 class="title">d.camp Rover Kinesis Test</h1>
+
+      <div class="row loader"></div>
+      <div id="main" class="d-none">
+        <form id="form">
+          <div>
+            <button id="viewer-button" type="button" class="btn btn-primary">
+              Start Stream
+            </button>
+            <!-- <button
+              id="create-channel-button"
+              type="button"
+              class="btn btn-primary"
+            >
+              Create Channel
+            </button> -->
+          </div>
+        </form>
+      </div>
+
+      <div id="master" class="d-none">
+        <h2>Master</h2>
+        <div class="row">
+          <div class="col">
+            <h5>Master Section</h5>
+            <div class="video-container">
+              <video class="local-view" autoplay playsinline controls muted />
+            </div>
+          </div>
+          <div class="col">
+            <h5>Viewer Return Channel</h5>
+            <div class="video-container">
+              <video class="remote-view" autoplay playsinline controls />
+            </div>
+          </div>
+        </div>
+        <div class="row datachannel">
+          <div class="col">
+            <div class="form-group">
+              <textarea
+                type="text"
+                class="form-control local-message"
+                placeholder="DataChannel Message"
+              >
+              </textarea>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card bg-light mb-3">
+              <pre
+                class="remote-message card-body text-monospace preserve-whitespace"
+              ></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="viewer" class="d-none">
+        <div class="row">
+          <div class="col">
+            <div class="video-container">
+              <video class="remote-view" autoplay playsinline controls />
+            </div>
+          </div>
+        </div>
+        <div>
+          <button id="stop-viewer-button" type="button" class="btn btn-primary">
+            Stop Stream
+          </button>
+        </div>
+        <div class="parameters">
+          <div class="commandWrapper">
+            <p class="label">Controls</p>
+            <div class="rowTop">
+              <button class="command noselect" id="forward">
+                ↑
+              </button>
+            </div>
+            <div class="rowMiddle">
+              <button class="command noselect" id="left">
+                ←
+              </button>
+              <button class="command noselect" id="right">
+                →
+              </button>
+            </div>
+            <div class="rowBottom">
+              <button class="command noselect" id="back">
+                ↓
+              </button>
+            </div>
+          </div>
+          <div class="speedWrapper">
+            <p class="label">Speed</p>
+            <div class="speedContent">
+              <div class="speedLabel">
+                <span class="slow">Slow</span>
+                <span class="fast">Fast</span>
+              </div>
+              <form method="post" id="commandSpeed">
+                <input
+                  type="range"
+                  id="speed"
+                  name="speed"
+                  class="speed"
+                  orient="vertical"
+                  min="1"
+                  max="9"
+                  value="4"
+                  onkeydown="event.preventDefault()"
+                />
+              </form>
+              <p id="speedValue">40%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="./master.js"></script>
+    <script src="./viewer.js"></script>
+    <script src="./createSignalingChannel.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

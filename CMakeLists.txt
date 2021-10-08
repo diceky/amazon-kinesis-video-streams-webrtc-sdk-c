@@ -358,13 +358,13 @@ if (BUILD_SAMPLE)
     kvsWebrtcClientMaster
     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/Common.c
     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/kvsWebRTCClientMaster.c)
-  target_link_libraries(kvsWebrtcClientMaster kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils)
+  target_link_libraries(kvsWebrtcClientMaster kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils wiringPi)
 
   add_executable(
     kvsWebrtcClientViewer
     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/Common.c
     ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/kvsWebRTCClientViewer.c)
-  target_link_libraries(kvsWebrtcClientViewer kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils)
+  target_link_libraries(kvsWebrtcClientViewer kvsWebrtcClient kvsWebrtcSignalingClient kvspicUtils wiringPi)
 
   add_executable(
           discoverNatBehavior
@@ -377,7 +377,7 @@ if (BUILD_SAMPLE)
       ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/Common.c
       ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/samples/kvsWebRTCClientMasterGstreamerSample.c
     )
-    target_link_libraries(kvsWebrtcClientMasterGstSample kvsWebrtcClient kvsWebrtcSignalingClient ${GST_SAMPLE_LIBRARIES} kvspicUtils)
+    target_link_libraries(kvsWebrtcClientMasterGstSample kvsWebrtcClient kvsWebrtcSignalingClient ${GST_SAMPLE_LIBRARIES} kvspicUtils wiringPi)
 
     install(TARGETS kvsWebrtcClientMasterGstSample
       RUNTIME DESTINATION bin
