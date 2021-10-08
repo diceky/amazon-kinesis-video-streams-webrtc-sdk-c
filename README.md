@@ -1,6 +1,7 @@
 # Raspberry Pi Remote Controlled Rover with Amazon Kinesis
 
-A remote controlled rover with live camera stream using Raspberry Pi + Pi camera module + [Amazon Kinesis Video Streams C WebRTC SDK](https://github.com/diceky/amazon-kinesis-video-streams-webrtc-sdk-c).
+A remote controlled rover with live camera stream using Raspberry Pi + Pi camera module.
+By using [Amazon Kinesis Video Streams C WebRTC SDK](https://github.com/diceky/amazon-kinesis-video-streams-webrtc-sdk-c), the rover can be viewed and controlled from anywhere with a browser, even from your phone.
 
 ## Demo
 
