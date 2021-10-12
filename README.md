@@ -73,9 +73,9 @@ sudo pip3 install awscli --upgrade
 aws configure
 ```
 
-AWS Access Key ID: xxxxxxxx
-AWS Secret Access Key: xxxxxxx
-Default region name: ap-northeast-1
+AWS Access Key ID: xxxxxxxx  
+AWS Secret Access Key: xxxxxxx  
+Default region name: ap-northeast-1  
 Default output format: json
 
 ## Step 4 - Set up AWS Policies/Roles/IoT
