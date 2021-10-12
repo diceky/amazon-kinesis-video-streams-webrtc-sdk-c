@@ -82,7 +82,7 @@ Default output format: json
 
 Follow instructions on Step 5 and Step 6 [here](https://aws.amazon.com/jp/builders-flash/202109/angle-control-camera/?awsf.filter-name=*all).
 
-If you are setting up multiple rovers, you can start from _Step 6-3_ from the second rover.
+If you are setting up multiple rovers, you can start from **Step 6-3** from the second rover.
 
 ## Step 5 - Set environment variables for su
 
