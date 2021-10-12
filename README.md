@@ -35,7 +35,7 @@ sudo apt install -y cmake \
 
 ## Step 0 - Electronics
 
-This code uses the following GPIO pins for the 4 motors + LED.
+This code uses the following Raspberry Pi GPIO pins for the 4 motors + LED.
 The pin numbers are BCM.
 
 ```
@@ -50,11 +50,11 @@ The pin numbers are BCM.
 
 ## Step 1 - Clone this repo
 
-Make sure to use the `dice/dCampRover` branch.
-
 ```
 git clone https://github.com/diceky/amazon-kinesis-video-streams-webrtc-sdk-c.git
 ```
+
+(Make sure to use the default `dice/dCampRover` branch)
 
 ## Step 2 - Build
 
@@ -80,11 +80,17 @@ Default output format: json
 
 ## Step 4 - Set up AWS Policies/Roles/IoT
 
-Follow instructions on Step 5 and Step 6 [here](https://aws.amazon.com/jp/builders-flash/202109/angle-control-camera/?awsf.filter-name=*all).
+Follow instructions on **Step 5** and **Step 6** [here](https://aws.amazon.com/jp/builders-flash/202109/angle-control-camera/?awsf.filter-name=*all).
 
-If you are setting up multiple rovers, you can start from **Step 6-3** from the second rover.
+If you are setting up multiple rovers, you can start from **Step 6-3** for the second rover and onwards.
 
-## Step 5 - Set environment variables for su
+## Step 5 - Install AWS Iot Root Certificate
+
+```
+wget https://www.amazontrust.com/repository/AmazonRootCA1.pem -O ~/amazon-kinesis-video-streams-webrtc-sdk-c/build/AmazonRootCA1.pem
+```
+
+## Step 6 - Set permanent environment variables for su
 
 Edit `/etc/environment` and add the following 2 lines then reboot the Pi.
 
@@ -93,7 +99,7 @@ export AWS_IOT_CREDENTIALS_ENDPOINT="endpointAddress from Step 3"
 export AWS_DEFAULT_REGION="ap-northeast-1"
 ```
 
-## Step 6 - Run video streaming
+## Step 7 - Run video streaming
 
 ```
 sudo su -
@@ -101,10 +107,10 @@ cd /home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build
 ./kvsWebrtcClientMasterGstSample raspi-channel
 ```
 
-## Step 7 - View streaming + send commands via browser
+## Step 8 - View streaming + send commands via browser
 
-Make a new User in AWS IAM console, attach `AmazonKinesisVideoStreamsFullAccess` to it and get the Access key ID and secret key.
+Make a new User in [AWS IAM console](https://aws.amazon.com/iam/), attach `AmazonKinesisVideoStreamsFullAccess` to it and get the Access key ID and secret key.
 
-Go to `client/app.js` in this repo and replace the first 3 lines with your credentials/channel name.
+Go to `client/app.js` in this repo and replace the first 3 lines with the credentials you just retreived + channel name.
 
 Then open up `client/index.html` in your browser and you will be able to view the video stream + send commands to control the rover.
