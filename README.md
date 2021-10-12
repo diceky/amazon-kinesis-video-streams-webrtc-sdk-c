@@ -59,6 +59,7 @@ git clone https://github.com/diceky/amazon-kinesis-video-streams-webrtc-sdk-c.gi
 ## Step 2 - Build
 
 ```
+cd amazon-kinesis-video-streams-webrtc-sdk-c/
 mkdir build
 cd build
 cmake ..
