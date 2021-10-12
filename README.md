@@ -86,7 +86,7 @@ If you are setting up multiple rovers, you can start from **Step 6-3** from the 
 
 ## Step 5 - Set environment variables for su
 
-Go to '/etc/environment' and add the following 2 lines then reboot the Pi.
+Edit `/etc/environment` and add the following 2 lines then reboot the Pi.
 
 ```
 export AWS_IOT_CREDENTIALS_ENDPOINT="endpointAddress from Step 3"
