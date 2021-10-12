@@ -48,7 +48,15 @@ The pin numbers are BCM.
 #define LED 17
 ```
 
-## Step 1 - Build
+## Step 1 - Clone this repo
+
+Make sure to use the `dice/dCampRover` branch.
+
+```
+git clone https://github.com/diceky/amazon-kinesis-video-streams-webrtc-sdk-c.git
+```
+
+## Step 2 - Build
 
 ```
 mkdir build
@@ -57,7 +65,7 @@ cmake ..
 make
 ```
 
-## Step 2 - Install + configure AWS CLI
+## Step 3 - Install + configure AWS CLI
 
 ```
 sudo pip3 install awscli --upgrade
@@ -69,13 +77,13 @@ AWS Secret Access Key: xxxxxxx
 Default region name: ap-northeast-1
 Default output format: json
 
-## Step 3 - Set up AWS Policies/Roles/IoT
+## Step 4 - Set up AWS Policies/Roles/IoT
 
 Follow instructions on Step 5 and Step 6 [here](https://aws.amazon.com/jp/builders-flash/202109/angle-control-camera/?awsf.filter-name=*all).
 
 If you are setting up multiple rovers, you can start from Step 6-2 from the second rover.
 
-## Step 4 - Set environment variables for su
+## Step 5 - Set environment variables for su
 
 Go to '/etc/environment' and add the following 2 lines then reboot the Pi.
 
@@ -84,7 +92,7 @@ export AWS_IOT_CREDENTIALS_ENDPOINT="endpointAddress from Step 3"
 export AWS_DEFAULT_REGION="ap-northeast-1"
 ```
 
-## Step 5 - Run video streaming
+## Step 6 - Run video streaming
 
 ```
 sudo su -
@@ -92,7 +100,7 @@ cd /home/pi/amazon-kinesis-video-streams-webrtc-sdk-c/build
 ./kvsWebrtcClientMasterGstSample raspi-channel
 ```
 
-## Step 6 - View streaming + send commands via browser
+## Step 7 - View streaming + send commands via browser
 
 Make a new User in AWS IAM console, attach `AmazonKinesisVideoStreamsFullAccess` to it and get the Access key ID and secret key.
 
