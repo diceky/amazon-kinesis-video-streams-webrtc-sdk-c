@@ -95,7 +95,7 @@ wget https://www.amazontrust.com/repository/AmazonRootCA1.pem -O ~/amazon-kinesi
 Edit `/etc/environment` and add the following 2 lines then reboot the Pi.
 
 ```
-export AWS_IOT_CREDENTIALS_ENDPOINT="endpointAddress from Step 3"
+export AWS_IOT_CREDENTIALS_ENDPOINT="endpointAddress from Step 4"
 export AWS_DEFAULT_REGION="ap-northeast-1"
 ```
 
